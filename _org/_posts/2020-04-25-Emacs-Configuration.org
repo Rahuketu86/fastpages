@@ -1,0 +1,727 @@
+#+OPTIONS: toc:nil 
+#+BEGIN_EXPORT html
+---
+layout: post
+categories: [orgmode]
+title: Emacs Configuration
+comments: true
+toc: false
+---
+#+END_EXPORT
+
+#+TOC: headlines 3
+As a tradition for sharing your literate configuration in org mode. I am sharing my complete emacs configuration here. People who are going to use Org Mode with FastPages for Blogging might find the last section useful.
+
+* Emacs init.el
+  #+BEGIN_EXPORT html
+    {% highlight emacs-lisp %}
+    (package-initialize)
+
+    (require 'org)
+    (org-babel-load-file
+          (expand-file-name "configuration.org"
+                             user-emacs-directory))
+
+    {% endhighlight %}
+  #+END_EXPORT
+
+* Emacs Customization Group
+  #+BEGIN_SRC emacs-lisp
+    (setq custom-file
+          (expand-file-name "custom.el"
+                            user-emacs-directory))
+  #+END_SRC
+
+* Emacs Repositories
+  #+BEGIN_SRC emacs-lisp
+    (require 'package)
+    ;;;(add-to-list 'package-archives
+    ;;;'             '("marmalade" . "http://marmalade-repo.org/packages/") t)
+    (add-to-list 'package-archives
+                 '("melpa-stable" . "https://stable.melpa.org/packages/") t)
+    (add-to-list 'package-archives
+                 '("melpa" . "http://melpa.org/packages/")
+                 t)
+
+	(add-to-list 'package-archives 
+	             '("org" . "http://orgmode.org/elpa/")
+				 t)
+    (when (< emacs-major-version 24)
+      ;; For important compatibility libraries like cl-lib
+      (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
+    (package-initialize)
+
+  #+END_SRC
+
+* Personal Information
+ #+BEGIN_SRC emacs-lisp
+   (setq user-full-name "Rahul Saraf"
+ 	user-mail-address "rahuketu86@gmail.com")
+ #+END_SRC
+* Emacs : Add Info directory
+ #+BEGIN_SRC emacs-lisp
+       (setq Info-default-directory-list
+             (append
+                     Info-default-directory-list
+                     '("~/info" )))
+       (add-hook 'Info-mode-hook           ; After Info-mode has started
+           (lambda ()
+               (setq Info-additional-directory-list Info-default-directory-list)
+           ))
+ #+END_SRC
+* Emacs: Backups
+  #+BEGIN_SRC emacs-lisp
+    (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+    (setq delete-old-versions -1)
+    (setq version-control t)
+    (setq vc-make-backup-files t)
+  #+END_SRC
+* Emacs: SaveHist
+  #+BEGIN_SRC emacs-lisp
+    (setq savehist-file "~/.emacs.d/savehist")
+    (savehist-mode 1)
+    (setq history-length t)
+    (setq history-delete-duplicates t)
+    (setq savehist-save-minibuffer-history 1)
+    (setq savehist-additional-variables
+  	'(kill-ring
+  	  search-ring
+  	  regexp-search-ring))
+  #+END_SRC
+* Emacs Additional Infopath
+  #+BEGIN_SRC  emacs-lisp
+    (add-to-list 'Info-default-directory-list "~/.emacs.d/info")
+  #+END_SRC
+* Utility Functions
+** Function to open this configuration file
+   #+BEGIN_SRC emacs-lisp
+
+     (defvar config-file-name "configuration.org")
+
+     (defun my-config()
+       "Function to open org configuration file"
+       (interactive)
+  
+       (find-file (expand-file-name config-file-name
+                                    user-emacs-directory)))  
+   #+END_SRC
+
+* Splash Screen and bars
+  #+BEGIN_SRC emacs-lisp
+    (setq inhibit-splash-screen t
+	  ;;      initial-scratch-message nil
+	  ;;    initial-major-mode 'org-mode
+	  )
+
+    (scroll-bar-mode -1)
+    (tool-bar-mode -1)
+    ;; (menu-bar-mode -1)
+  #+END_SRC
+
+* Configure Emacs for use-package
+  #+BEGIN_SRC emacs-lisp
+     (unless (package-installed-p 'use-package)
+     (package-refresh-contents)
+     (package-install 'use-package))
+    ;;  (setq use-package-verbose t)
+    ;;  (setq use-package-always-ensure t)
+     ;; (eval-when-compile
+     ;; (require 'use-package))
+     ;; (use-package auto-compile
+     ;; :config (auto-compile-on-load-mode))
+     ;; (require 'diminish)
+    ;;  ;;
+    (require 'bind-key)
+   #+END_SRC
+* Improve performance on Windows
+  Improving File Saving Performance on windows.
+  #+BEGIN_SRC emacs-lisp
+    (setq w32-get-true-file-attributes nil)
+  #+END_SRC
+
+* Emacs Custom Theme
+  #+BEGIN_SRC emacs-lisp
+    (use-package monokai-theme
+      :ensure t
+      :init (load-theme 'monokai t))
+  #+END_SRC
+
+* Setup Ido and smex
+  #+BEGIN_SRC emacs-lisp
+    ;; Activate ido
+    (require 'ido)
+    (ido-mode t)
+
+    ;; Set up smex
+    (use-package smex
+      :ensure t
+      :bind (("M-x" . smex))
+      :config (smex-initialize))
+  #+END_SRC
+* Setup Guru Mode
+  Guru mode works by disabling common key bindings and pushing for
+  Emacs standard key bindings. Instead of global hook up Textmode and
+  other so that it plays nice with ido-mode.
+  #+BEGIN_SRC emacs-lisp
+    (use-package guru-mode
+      :ensure t
+      :init
+      (setq-default major-mode 'text-mode)
+      :config
+      (add-hook 'prog-mode-hook 'guru-mode)
+      (add-hook 'text-mode-hook 'guru-mode)
+     )
+  #+END_SRC
+* Setup Magit
+  Magit is a git porcelain. With this we can stay within emacs for
+  configuration modifications and commiting to git.
+  #+BEGIN_SRC emacs-lisp
+    (use-package magit
+      :ensure t
+      :bind ("C-x g" . magit-status))
+  #+END_SRC
+  
+* Setup Company Mode
+  Company mode is used for autocompletion in Emacs.
+  #+BEGIN_SRC emacs-lisp
+    (use-package company
+      :ensure t
+      :defer t
+      :config
+       (global-company-mode)
+
+;;      :config
+;;       (global-company-mode))
+	   )
+  #+END_SRC
+* Org-Mode Settings
+  Global settings for all the org-mode buffers.
+
+  #+BEGIN_SRC emacs-lisp
+    (use-package org-mode
+      :init (remove-hook 'org-mode-hook 'guru-mode)
+      :bind (("\C-cl" . org-store-link)
+             ("\C-ca" . org-agenda)
+             ("\C-cc" . org-capture)
+             ("\C-cb" . org-iswitch))
+      :config
+       (remove-hook 'org-mode-hook 'guru-mode))
+  #+END_SRC
+
+  Additional Org Mode plugins
+  - Org Mode with Twitter bootstrap(ox-twbs)
+    #+BEGIN_SRC emacs-lisp
+      (use-package ox-twbs
+        :ensure t
+        :defer t)
+    #+END_SRC
+
+* Nikola Blog Settings
+
+  #+BEGIN_SRC emacs-lisp
+     ;; (use-package htmlize
+    ;;  :ensure t)
+    ;; (require 'org)
+    ;; (require 'ox-html)
+
+    ;; ;;; Custom configuration for the export.
+
+    ;; ;;; Add any custom configuration that you would like to 'conf.el'.
+    ;; (setq nikola-use-pygments t
+    ;;       org-export-with-toc nil
+    ;;       org-export-with-section-numbers nil
+    ;;       org-startup-folded 'showeverything)
+
+    ;; ;; Load additional configuration from conf.el
+    ;; (let ((conf (expand-file-name "conf.el" (file-name-directory load-file-name))))
+    ;;   (if (file-exists-p conf)
+    ;;       (load-file conf)))
+
+    ;; ;;; Macros
+
+    ;; ;; Load Nikola macros
+    ;; (setq nikola-macro-templates
+    ;;       (with-current-buffer
+    ;; 	  (find-file
+    ;; 	   (expand-file-name "macros.org" (file-name-directory load-file-name)))
+    ;; 	(org-macro--collect-macros)))
+
+    ;; ;;; Code highlighting
+    ;; (defun org-html-decode-plain-text (text)
+    ;;   "Convert HTML character to plain TEXT. i.e. do the inversion of
+    ;;      `org-html-encode-plain-text`. Possible conversions are set in
+    ;;      `org-html-protect-char-alist'."
+    ;;   (mapc
+    ;;    (lambda (pair)
+    ;;      (setq text (replace-regexp-in-string (cdr pair) (car pair) text t t)))
+    ;;    (reverse org-html-protect-char-alist))
+    ;;   text)
+
+    ;; ;; Use pygments highlighting for code
+    ;; (defun pygmentize (lang code)
+    ;;   "Use Pygments to highlight the given code and return the output"
+    ;;   (with-temp-buffer
+    ;;     (insert code)
+    ;;     (let ((lang (or (cdr (assoc lang org-pygments-language-alist)) "text")))
+    ;;       (shell-command-on-region (point-min) (point-max)
+    ;; 			       (format "pygmentize -f html -l %s" lang)
+    ;; 			       (buffer-name) t))
+    ;;     (buffer-string)))
+
+    ;; (defconst org-pygments-language-alist
+    ;;   '(("asymptote" . "asymptote")
+    ;;     ("awk" . "awk")
+    ;;     ("c" . "c")
+    ;;     ("c++" . "cpp")
+    ;;     ("cpp" . "cpp")
+    ;;     ("clojure" . "clojure")
+    ;;     ("css" . "css")
+    ;;     ("d" . "d")
+    ;;     ("emacs-lisp" . "scheme")
+    ;;     ("F90" . "fortran")
+    ;;     ("gnuplot" . "gnuplot")
+    ;;     ("groovy" . "groovy")
+    ;;     ("haskell" . "haskell")
+    ;;     ("java" . "java")
+    ;;     ("js" . "js")
+    ;;     ("julia" . "julia")
+    ;;     ("latex" . "latex")
+    ;;     ("lisp" . "lisp")
+    ;;     ("makefile" . "makefile")
+    ;;     ("matlab" . "matlab")
+    ;;     ("mscgen" . "mscgen")
+    ;;     ("ocaml" . "ocaml")
+    ;;     ("octave" . "octave")
+    ;;     ("perl" . "perl")
+    ;;     ("picolisp" . "scheme")
+    ;;     ("python" . "python")
+    ;;     ("r" . "r")
+    ;;     ("ruby" . "ruby")
+    ;;     ("sass" . "sass")
+    ;;     ("scala" . "scala")
+    ;;     ("scheme" . "scheme")
+    ;;     ("sh" . "sh")
+    ;;     ("sql" . "sql")
+    ;;     ("sqlite" . "sqlite3")
+    ;;     ("tcl" . "tcl"))
+    ;;   "Alist between org-babel languages and Pygments lexers.
+    ;; lang is downcased before assoc, so use lowercase to describe language available.
+    ;; See: http://orgmode.org/worg/org-contrib/babel/languages.html and
+    ;; http://pygments.org/docs/lexers/ for adding new languages to the mapping.")
+
+    ;; ;; Override the html export function to use pygments
+    ;; (defun org-html-src-block (src-block contents info)
+    ;;  "Transcode a SRC-BLOCK element from Org to HTML.
+    ;;  CONTENTS holds the contents of the item.  INFO is a plist holding
+    ;;  contextual information."
+    ;;    (if (org-export-read-attribute :attr_html src-block :textarea)
+    ;;        (org-html--textarea-block src-block)
+    ;;      (let ((lang (org-element-property :language src-block))
+    ;;       (code (org-element-property :value src-block))
+    ;;       (code-html (org-html-format-code src-block info)))
+    ;;        (if nikola-use-pygments
+    ;;       (pygmentize (downcase lang) (org-html-decode-plain-text code))
+    ;;     code-html))))
+
+    ;; ;; Export images with custom link type
+    ;; (defun org-custom-link-img-url-export (path desc format)
+    ;;   (cond
+    ;;    ((eq format 'html)
+    ;;     (format "<img src=\"%s\" alt=\"%s\"/>" path desc))))
+    ;; (org-add-link-type "img-url" nil 'org-custom-link-img-url-export)
+
+    ;; ;; Export function used by Nikola.
+    ;; (defun nikola-html-export (infile outfile)
+    ;;   "Export the body only of the input file and write it to
+    ;; specified location."
+    ;;   (with-current-buffer (find-file infile)
+    ;;     (org-macro-replace-all nikola-macro-templates)
+    ;;     (org-html-export-as-html nil nil t t)
+    ;;     (write-file outfile nil)))
+
+  #+END_SRC
+
+* Games
+** Chess
+   #+BEGIN_SRC emacs-lisp
+     (use-package chess
+       :ensure t
+       :defer t)
+   #+END_SRC
+
+* Setup ox-reveal
+ #+BEGIN_SRC emacs-lisp
+    (use-package org-re-reveal
+      :ensure t
+      :init
+    )
+    (package-refresh-contents)
+   (use-package reftex
+                :ensure t
+                :commands turn-on-reftex
+                )
+     (use-package org-ref
+         :ensure t
+         :after org)
+
+      (use-package org-re-reveal-ref
+         :ensure t
+         :after org)
+
+  #+END_SRC
+
+* Setup htmlize and addtional org-contrib
+ #+BEGIN_SRC emacs-lisp
+  (dolist (pkg '(org-plus-contrib htmlize))
+    (unless (package-installed-p pkg)
+      (package-install pkg)))
+  #+END_SRC
+
+* String manupulation library elisp
+  #+begin_src emacs-lisp
+    (use-package s
+      :ensure t)
+  #+end_src
+
+* FastPages: Links and Backend 
+
+** Jekyll Liquid Tag Handling 
+Some code for converting links to jekyll liquid tags . This is to enable fastpages specific boxes and remote link funcitionality
+
+#+begin_src emacs-lisp :results silent :exports (when (eq org-export-current-backend 'fastpages) "none")
+  (use-package s
+      :ensure t)
+
+  (require 'org)
+  (require 'ox-publish)
+  (require 'ox-html)
+
+  ;; Hack into source block Export function to Delegate syntax highlighting to jekyll
+
+  ;; {% comment %}
+
+  ;; Link Funcitonality FastPages
+
+
+
+  ;;{% comment %}
+
+  (defun jekyll-highlight (lang code)
+    (format "{%% highlight %s %%}\n%s{%% endhighlight %%}" lang code))
+  
+  (defun jekyll-include (inc-tmpl url)
+     (s-lex-format "{% include ${inc-tmpl} content='<a href=\"${url}\">${url}</a>' %}"))
+
+
+  (defun jekyll-include-box (inc-tmpl inputtype text)
+    (s-lex-format "{% include ${inc-tmpl} ${inputtype}=\"${text}\" %}"))
+
+
+
+  (defun jekyll-include-remote-img (url caption)
+    (if caption
+	  (s-lex-format "{% include image.html url='${url}' caption='${caption}' file='${url}' alt='${caption}' %}")
+      (s-lex-format "{% include image.html url='${url}' file='${url}' alt='Image' %}")))
+
+  ;; {% endcomment %}
+
+  (defun jekyll-include-local-img (url caption)
+    (let ((n_url (s-lex-format "{{site.baseurl}}${url}")))
+      (if caption
+	    (s-lex-format "<figure>
+      <img src=\"${n_url}\"
+	     alt=\"${caption}\">
+      <figcaption>${caption}</figcaption>
+  </figure>")
+	  (s-lex-format "<figure>
+      <img src=\"${n_url}\" >
+  </figure>"))))
+
+#+end_src
+
+** FastPages Links
+
+#+begin_src emacs-lisp
+
+  (defun embed-img (url caption)
+    (cond ((s-starts-with? "/images" url) (jekyll-include-local-img url caption))
+	    ((s-starts-with? "/assets" url) (jekyll-include-local-img url caption))
+	    (t (jekyll-include-remote-img url caption))))
+
+  ;;(jekyll-include-img "/images/Emacs.png" "Emacs")
+
+  (defun embed-iframe (url)
+    (s-lex-format " <div style=\"text-align: center;\">
+	  <iframe width=\"560\" height=\"315\" src=\"${url}\" frameborder=\"0\" allow=\"autoplay; encrypted-media\" allowfullscreen></iframe>
+     </div>"))
+
+
+  (defun get-yt-code (url)
+    (car (s-split "&list=" (s-chop-prefixes '("https://www.youtube.com/watch?v=" "https://www.youtube.com/playlist?list=" "https://youtu.be/") url))))
+
+  ;;(get-yt-code "https://www.youtube.com/watch?v=SmH3BPpl0TI")
+  ;;(get-yt-code "https://www.youtube.com/playlist?list=PLxc79l2wpbJYTI5rv2os7OoKQMqxReZpr")
+  ;;(get-yt-code "https://www.youtube.com/watch?v=SzA2YODtgK4&list=PLxc79l2wpbJYTI5rv2os7OoKQMqxReZpr")
+  ;;(get-yt-code "https://youtu.be/VawlmG9tsXI")
+
+
+  (defun embed-yt(url)
+    (if (s-starts-with? "https://www.youtube.com/playlist?list=" url)
+	  (let ((code (get-yt-code url))
+		(embed-base "https://www.youtube.com/embed/videoseries?list="))
+	    (embed-iframe (concat embed-base code)))
+      (jekyll-include "youtube.html" (concat "https://youtu.be/" (get-yt-code url)))))
+
+  ;;(embed-yt "https://www.youtube.com/watch?v=SmH3BPpl0TI")
+  ;;(embed-yt "https://www.youtube.com/playlist?list=PLxc79l2wpbJYTI5rv2os7OoKQMqxReZpr")
+  ;;(embed-yt "https://youtu.be/VawlmG9tsXI")
+
+  (org-link-set-parameters
+   "yt"
+   :export (lambda (path desc backend)
+	       (cond
+		((eq 'html backend)
+		 (embed-yt path ))))
+   :help-echo "This links helps in exporting link to jekyll youtube liquid template")
+
+  (org-link-set-parameters
+   "twitter"
+   :export (lambda (path desc backend)
+	       (cond
+		((eq 'html backend)
+		 (jekyll-include "twitter.html" path ))))
+   :help-echo "This links helps in exporting link to jekyll liquid twitter template")
+
+  (org-link-set-parameters
+   "img"
+   :export (lambda (path desc backend)
+	       (cond
+		((eq 'html backend)
+		 (embed-img  path desc))))
+   :help-echo "This links helps in exporting link to jekyll liquid image template")
+
+  (org-link-set-parameters
+   "alert"
+   :face '(:foreground "red" :underline t)
+   :export (lambda (path desc backend)
+	       (cond
+		((eq 'html backend)
+		 (jekyll-include-box "alert.html" "text" (or desc path)))))
+   :help-echo "This links helps in exporting link to jekyll alert template")
+
+
+  (org-link-set-parameters
+   "info"
+   :face '(:foreground "blue" :underline t)
+   :export (lambda (path desc backend)
+	       (cond
+		((eq 'html backend)
+		 (jekyll-include-box "info.html" "text" (or desc path)))))
+   :help-echo "This links helps in exporting link to jekyll info template")
+
+
+  (org-link-set-parameters
+   "warning"
+   :face '(:foreground "pink")
+   :export (lambda (path desc backend)
+	       (cond
+		((eq 'html backend)
+		 (jekyll-include-box "warning.html" "content" (or desc path)))))
+   :help-echo "This links helps in exporting link to jekyll warning template")
+
+
+  (org-link-set-parameters
+   "important"
+   :face '(:foreground "yellow")
+   :export (lambda (path desc backend)
+	       (cond
+		((eq 'html backend)
+		 (jekyll-include-box "important.html" "content" (or desc path)))))
+   :help-echo "This links helps in exporting link to jekyll important template")
+
+  (org-link-set-parameters
+   "tip"
+   :face '(:foreground "green")
+   :export (lambda (path desc backend)
+	       (cond
+		((eq 'html backend)
+		 (jekyll-include-box "tip.html" "content" (or desc path)))))
+   :help-echo "This links helps in exporting link to jekyll tip template")
+
+
+  (org-link-set-parameters
+   "note"
+   :face '(:foreground "light blue")
+   :export (lambda (path desc backend)
+	       (cond
+		((eq 'html backend)
+		 (jekyll-include-box "note.html" "content" (or desc path)))))
+   :help-echo "This links helps in exporting link to jekyll note template")
+
+    (org-link-set-parameters
+    "iframe"
+    :export (lambda (path desc backend)
+	(cond
+	    ((eq 'html backend)
+	    (embed-iframe path ))))
+    :help-echo "This links help in embedding iframe and revealjs presentation")
+
+
+#+end_src
+** FastPages Backend
+
+#+begin_src emacs-lisp
+  (defun org-fp-code-folding (block)
+    (s-lex-format "<div class=\"cell border-box-sizing code_cell rendered\">
+      <details class=\"description\">
+	<summary class=\"btn btn-sm\" data-open=\"Hide Code\" data-close=\"Show Code\"></summary>
+	  <p>
+	     <div class=\"input\">
+		  ${block}
+	    </div>
+	  </p>
+      </details>
+  </div>"))
+ 
+  (defun org-fp-html-src-block (src-block contents info)
+    "Transcode a SRC-BLOCK element from Org to HTML.
+  CONTENTS holds the contents of the item.  INFO is a plist holding
+  contextual information."
+    (if (org-export-read-attribute :attr_html src-block :textarea)
+	  (org-html--textarea-block src-block)
+      (let ((lang (org-element-property :language src-block))
+	      (caption (org-export-get-caption src-block))
+	      (code (org-html-format-code src-block info))
+	      (label (let ((lbl (and (org-element-property :name src-block)
+				     (org-export-get-reference src-block info))))
+		       (if lbl (format " id=\"%s\"" lbl) ""))))
+	  (org-fp-code-folding
+	  (if (not lang) (format "<pre class=\"example\"%s>\n%s</pre>" label code)
+	    (format
+	     "<div class=\"org-src-container\">\n%s%s\n</div>"
+	     (if (not caption) ""
+	       (format "<label class=\"org-src-name\">%s</label>"
+		       (org-export-data caption info)))
+	     (jekyll-highlight lang code)))))))
+
+  ;;	 (format "\n<pre class=\"src src-%s\"%s>%s</pre>" lang label code))))))
+
+  (defun org-fp-inline-src-block (inline-src-block _contents info)
+    "Transcode an INLINE-SRC-BLOCK element from Org to HTML.
+    CONTENTS holds the contents of the item.  INFO is a plist holding
+    contextual information."
+    (let* ((lang (org-element-property :language inline-src-block))
+	     (code (org-html-fontify-code
+		    (org-element-property :value inline-src-block)
+		    lang))
+	     (label
+	      (let ((lbl (and (org-element-property :name inline-src-block)
+			      (org-export-get-reference inline-src-block info))))
+		(if (not lbl) "" (format " id=\"%s\"" lbl)))))
+      (jekyll-highlight lang code)))
+
+
+
+  (org-export-define-derived-backend 'fastpages 'html
+    :menu-entry
+    '(?f "FastPages Export Backend"
+	   ((?A "As HTML Buffer (Fastpages)" org-fp-export-as-html)
+	    (?a "As HTML file (Fastpages)" org-fp-export-to-html)))
+    :translate-alist '((inline-src-block . org-fp-inline-src-block)
+			 (src-block . org-fp-html-src-block)))
+
+
+
+  ;;;###autoload
+  (defun org-fp-export-as-html
+    (&optional async subtreep visible-only body-only ext-plist)
+
+    (interactive)
+    (org-export-to-buffer 'fastpages "*Org FP HTML Export*"
+      async subtreep visible-only body-only ext-plist
+      (lambda () (set-auto-mode t))))
+
+  ;;;###autoload
+  (defun org-fp-convert-region-to-html ()
+
+    (interactive)
+    (org-export-replace-region-by 'fastpages))
+
+  ;;;###autoload
+  (defun org-fp-export-to-html
+    (&optional async subtreep visible-only body-only ext-plist)
+
+
+    (interactive)
+    (let* ((extension (concat
+			 (when (> (length org-html-extension) 0) ".")
+			 (or (plist-get ext-plist :html-extension)
+			     org-html-extension
+			     "html")))
+	     (file (org-export-output-file-name extension subtreep))
+	     (org-export-coding-system org-html-coding-system))
+      (org-export-to-file 'fastpages file
+	  async subtreep visible-only body-only ext-plist)))
+
+  ;;;###autoload
+  (defun org-fp-publish-to-html (plist filename pub-dir)
+
+    (org-publish-org-to 'fastpages filename
+			  (concat (when (> (length org-html-extension) 0) ".")
+				  (or (plist-get plist :html-extension)
+				      org-html-extension
+				      "html"))
+			  plist pub-dir))
+
+#+end_src
+
+* Fastpages Blog Publish function
+
+Publishing Code for Fastpages blog
+
+#+begin_src emacs-lisp
+  (cd "/Landmark2/pdo/Code/ALDAOps/FastPagesDev")
+  (setq org-html-htmlize-output-type nil)
+  (setq org-publish-project-alist
+	  '(
+
+      ("org-post-fastpages"
+	      ;; Path to your org files.
+	      :base-directory "./_org/_posts"
+	      :base-extension "org"
+
+	      ;; Path to your Jekyll project.
+	      :publishing-directory "./_posts/"
+	      :recursive t
+	      :publishing-function org-fp-publish-to-html
+	      :html-extension "md"
+	      :body-only t ;; Only export section between <body> </body>
+	)
+
+
+	("org-static-fastpages"
+	      :base-directory "./_org/assets"
+	      :base-extension "css\\|js\\|png\\|jpg\\|gif\\|pdf\\|mp3\\|ogg\\|swf\\|php"
+	      :publishing-directory "./assets/"
+	      :recursive t
+	      :publishing-function org-publish-attachment
+	      )
+
+	("org-images-fastpages"
+	      :base-directory "./_org/images"
+	      :base-extension "css\\|js\\|png\\|jpg\\|gif\\|pdf\\|mp3\\|ogg\\|swf\\|php"
+	      :publishing-directory "./images/"
+	      :recursive t
+	      :publishing-function org-publish-attachment
+	      )
+	("fastpages" :components ("org-post-fastpages" "org-static-fastpages" "org-images-fastpages"))
+
+    ))
+
+  (defun fastpages-publish-all ()
+    "Publish the blog to HTML."
+    (interactive)
+    (org-publish-all))
+
+#+end_src
+

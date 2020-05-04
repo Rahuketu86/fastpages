@@ -1,0 +1,360 @@
+#+options: toc:nil
+#+begin_export html
+---
+layout: post
+categories: [orgmode]
+title: Awesome Org Mode links
+description: Custom links for Fastpages Functionality
+hidden: true
+---
+#+end_export
+
+#+toc: headline 3
+
+* Introduction 
+
+In this post I want to reveiw the link functionality in org mode 9.0. Purpose of the exercise is to understand how to implement link functionality. I eventually want to use this to encapsulate iframe, include or other liquid or html directives in fastpages jekyll blog inside the link.
+
+This will be useful for following :-
+
+- Define Links which can help avoid writing raw html and include directives
+- Define different backends for different rendering targets
+- Allow me to use org mode navigation 
+
+Above notes will become clear towards the end of this post. As a reference I will be following the tutorial from [[http://kitchingroup.cheme.cmu.edu/blog/2016/11/04/New-link-features-in-org-9/][this link]].
+
+* COMMENT Basic syntax for link
+
+Lets start by defining a "red:link"
+#+begin_src emacs-lisp :results silent
+  (org-link-set-parameters
+   "red"
+   :follow(lambda (path)(message "You clicked me"))
+   :export(lambda (path desc backend)
+	    (cond
+	     ((eq 'html backend)
+	      (format "<font color=\"red\">%s</font>"
+		      (or desc path)))))
+   :face '(:foreground "red")
+   :help-echo "Click me for a message")
+#+end_src
+
+Will try this later
+
+#+begin_src emacs-lisp :results silent
+  (org-link-set-parameters
+   "red"
+   :face '(:foreground "red" :underline t))
+#+end_src
+
+This is underlined link. I will have to include it later
+
+
+* FastPages link 
+
+Lot of bells and whistle related to boxes and link are enabled using org mode link functionality
+- Links are prepended by a directive
+- When doing html export link get converted into jekyll include statement already defined in the code
+- When exporting to other backends it follows the same structure as normal link for that structure
+
+ #+begin_src emacs-lisp :results silent :exports (when (eq org-export-current-backend 'fastpages) "none")
+   (defun jekyll-include (inc-tmpl url)
+     (s-lex-format "{% include ${inc-tmpl} content='<a href=\"${url}\">${url}</a>' %}"))
+
+
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   ;; (defun convert-to-link (text)											      ;;
+   ;;   (let (														      ;;
+   ;;    st_str))														      ;;
+   ;; 															      ;;
+   ;; (convert-to-link "This is simple text")										      ;;
+   ;; (convert-to-link "A doc link to [an example website: fast.ai](https://www.fast.ai/) should also work fine.")		      ;;
+   ;; 															      ;;
+   ;; 															      ;;
+   ;; (defun get-till(sb str)												      ;;
+   ;;   (substring str 0 (s-index-of sb str)))										      ;;
+   ;; 															      ;;
+   ;; (defun get-from (eb str)												      ;;
+   ;;   (substring str (+ 1 (s-index-of eb str)) (length str)))								      ;;
+   ;;   															      ;;
+   ;; 															      ;;
+   ;; (defun get-bracketted(sb eb str)											      ;;
+   ;;   (substring str (+ 1 (s-index-of sb str))										      ;;
+   ;; 	     (s-index-of eb str)))											      ;;
+   ;; 															      ;;
+   ;; (setq tstring "A doc link to [an example website: fast.ai](https://www.fast.ai/) should also work fine.")		      ;;
+   ;; 															      ;;
+   ;; (substring tstring (+ 1 (s-index-of ")" tstring)) (length tstring))							      ;;
+   ;; 															      ;;
+   ;; (get-till "[" "This is a text")											      ;;
+   ;; (get-from ")" "This is a test")											      ;;
+   ;; 															      ;;
+   ;; (get-till "[" "A doc link to [an example website: fast.ai](https://www.fast.ai/) should also work fine.")		      ;;
+   ;; 															      ;;
+   ;; (get-bracketted "[" "]" "A doc link to [an example website: fast.ai](https://www.fast.ai/) should also work fine.")	      ;;
+   ;; 															      ;;
+   ;; (get-bracketted "(" ")" "A doc link to [an example website: fast.ai](https://www.fast.ai/) should also work fine.")	      ;;
+   ;; 															      ;;
+   ;; (let ((str "x is [xyz]"))												      ;;
+   ;;   (substring str (+ 1 (s-index-of "[" str))										      ;;
+   ;; 	     (s-index-of "]" str)))											      ;;
+   ;; (s-index-of "[" "x is [x]")												      ;;
+   ;; (s-index-of "]" "x is [x]")												      ;;
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+   (defun jekyll-include-box (inc-tmpl inputtype text)
+     (s-lex-format "{% include ${inc-tmpl} ${inputtype}=\"${text}\" %}"))
+
+
+   (defun jekyll-include-remote-img (url caption)
+     (if caption
+	 (s-lex-format "{% include image.html url='${url}' caption='${caption}' file='${url}' alt='${caption}' %}")
+       (s-lex-format "{% include image.html url='${url}' file='${url}' alt='Image' %}")))
+
+
+   (defun jekyll-include-local-img (url caption)
+     (let ((n_url (s-lex-format "{{site.baseurl}}${url}")))
+       (if caption
+	   (s-lex-format "<figure>
+       <img src=\"${n_url}\"
+	    alt=\"${caption}\">
+       <figcaption>${caption}</figcaption>
+   </figure>")
+	 (s-lex-format "<figure>
+       <img src=\"${n_url}\" >
+   </figure>"))))
+
+
+   (defun embed-img (url caption)
+     (cond ((s-starts-with? "/images" url) (jekyll-include-local-img url caption))
+	   ((s-starts-with? "/assets" url) (jekyll-include-local-img url caption))
+	   (t (jekyll-include-remote-img url caption))))
+
+   ;;(jekyll-include-img "/images/Emacs.png" "Emacs")
+
+   (defun embed-iframe (url)
+     (s-lex-format " <div style=\"text-align: center;\">
+	 <iframe width=\"560\" height=\"315\" src=\"${url}\" frameborder=\"0\" allow=\"autoplay; encrypted-media\" allowfullscreen></iframe>
+      </div>"))
+
+
+   (defun get-yt-code (url)
+     (car (s-split "&list=" (s-chop-prefixes '("https://www.youtube.com/watch?v=" "https://www.youtube.com/playlist?list=" "https://youtu.be/") url))))
+
+   ;;(get-yt-code "https://www.youtube.com/watch?v=SmH3BPpl0TI")
+   ;;(get-yt-code "https://www.youtube.com/playlist?list=PLxc79l2wpbJYTI5rv2os7OoKQMqxReZpr")
+   ;;(get-yt-code "https://www.youtube.com/watch?v=SzA2YODtgK4&list=PLxc79l2wpbJYTI5rv2os7OoKQMqxReZpr")
+   ;;(get-yt-code "https://youtu.be/VawlmG9tsXI")
+
+   (defun embed-yt(url)
+     (if (s-starts-with? "https://www.youtube.com/playlist?list=" url)
+	 (let ((code (get-yt-code url))
+	       (embed-base "https://www.youtube.com/embed/videoseries?list="))
+	   (embed-iframe (concat embed-base code)))
+       (jekyll-include "youtube.html" (concat "https://youtu.be/" (get-yt-code url)))))
+
+   ;;(embed-yt "https://www.youtube.com/watch?v=SmH3BPpl0TI")
+   ;;(embed-yt "https://www.youtube.com/playlist?list=PLxc79l2wpbJYTI5rv2os7OoKQMqxReZpr")
+   ;;(embed-yt "https://youtu.be/VawlmG9tsXI")
+
+   (org-link-set-parameters
+    "yt"
+    :export (lambda (path desc backend)
+	      (cond
+	       ((eq 'html backend)
+		(embed-yt path ))))
+    :help-echo "This links helps in exporting link to jekyll youtube liquid template")
+
+   (org-link-set-parameters
+    "twitter"
+    :export (lambda (path desc backend)
+	      (cond
+	       ((eq 'html backend)
+		(jekyll-include "twitter.html" path ))))
+    :help-echo "This links helps in exporting link to jekyll liquid twitter template")
+
+   (org-link-set-parameters
+    "img"
+    :export (lambda (path desc backend)
+	      (cond
+	       ((eq 'html backend)
+		(embed-img  path desc))))
+    :help-echo "This links helps in exporting link to jekyll liquid image template")
+
+   (org-link-set-parameters
+    "alert"
+    :face '(:foreground "red" :underline t)
+    :export (lambda (path desc backend)
+	      (cond
+	       ((eq 'html backend)
+		(jekyll-include-box "alert.html" "text" (or desc path)))))
+    :help-echo "This links helps in exporting link to jekyll alert template")
+
+
+   (org-link-set-parameters
+    "info"
+    :face '(:foreground "blue" :underline t)
+    :export (lambda (path desc backend)
+	      (cond
+	       ((eq 'html backend)
+		(jekyll-include-box "info.html" "text" (or desc path)))))
+    :help-echo "This links helps in exporting link to jekyll info template")
+
+
+   (org-link-set-parameters
+    "warning"
+    :face '(:foreground "pink")
+    :export (lambda (path desc backend)
+	      (cond
+	       ((eq 'html backend)
+		(jekyll-include-box "warning.html" "content" (or desc path)))))
+    :help-echo "This links helps in exporting link to jekyll warning template")
+
+
+   (org-link-set-parameters
+    "important"
+    :face '(:foreground "yellow")
+    :export (lambda (path desc backend)
+	      (cond
+	       ((eq 'html backend)
+		(jekyll-include-box "important.html" "content" (or desc path)))))
+    :help-echo "This links helps in exporting link to jekyll important template")
+
+   (org-link-set-parameters
+    "tip"
+    :face '(:foreground "green")
+    :export (lambda (path desc backend)
+	      (cond
+	       ((eq 'html backend)
+		(jekyll-include-box "tip.html" "content" (or desc path)))))
+    :help-echo "This links helps in exporting link to jekyll tip template")
+
+
+   (org-link-set-parameters
+    "note"
+    :face '(:foreground "light blue")
+    :export (lambda (path desc backend)
+	      (cond
+	       ((eq 'html backend)
+		(jekyll-include-box "note.html" "content" (or desc path)))))
+    :help-echo "This links helps in exporting link to jekyll note template")
+
+
+   (org-link-set-parameters
+    "iframe"
+    :export (lambda (path desc backend)
+	      (cond
+	       ((eq 'html backend)
+		(embed-iframe path ))))
+    :help-echo "This links help in embedding iframe and revealjs presentation")
+#+end_src
+
+** Youtube Video Link
+
+You can embed individual video or even playlist
+
+#+begin_example
+[[yt:https://youtu.be/5haX95nk02E][New Link Feature Org Mode]]
+#+end_example
+
+[[yt:https://youtu.be/5haX95nk02E][New Link Feature Org Mode]]
+
+#+begin_example
+
+[[yt:https://www.youtube.com/playlist?list=PLxc79l2wpbJYTI5rv2os7OoKQMqxReZpr][The Playlist for Org Mode]]
+#+end_example
+[[yt:https://www.youtube.com/playlist?list=PLxc79l2wpbJYTI5rv2os7OoKQMqxReZpr][The Playlist for Org Mode]]
+
+
+** Twitter Card Link
+
+#+begin_example
+[[twitter:https://twitter.com/jakevdp/status/1204765621767901185?s=20][Altair v4 release]]
+#+end_example
+[[twitter:https://twitter.com/jakevdp/status/1204765621767901185?s=20][Altair v4 release]]
+
+** Remote Image Link
+#+begin_example
+[[img:https://www.fast.ai/images/fastai_paper/show_batch.png][Credits: https://www.fast.ai/2020/02/13/fastai-A-Layered-API-for-Deep-Learning/]]
+#+end_example
+
+[[img:https://www.fast.ai/images/fastai_paper/show_batch.png][Credits: https://www.fast.ai/2020/02/13/fastai-A-Layered-API-for-Deep-Learning/]]
+
+#+begin_example
+[[img:https://upload.wikimedia.org/wikipedia/commons/7/71/ChessPawnSpecialMoves.gif]]
+#+end_example
+
+[[img:https://upload.wikimedia.org/wikipedia/commons/7/71/ChessPawnSpecialMoves.gif]]
+
+** Local Images
+
+
+#+begin_example
+[[img:/images/Emacs.png][Emacs is the king]]
+#+end_example
+
+[[img:/images/Emacs.png][Emacs is the king]]
+
+
+This has been awesome so far.
+
+** Boxes and Stuff
+#+begin_example
+[[alert:This is an alert box]]
+
+[[alert:box][Danger ahead]]
+
+[[info:This is info box]]
+
+[[info:box][This is for your information]]
+
+[[warning:box][You have been warned]]
+
+[[important:box][This is important]]
+
+[[tip:box][You are going to get lucky with emacs]]
+
+[[note:box][This is a note]]
+
+*I am currently in process of fixing doclink functionality inside note box*
+[[note:box][A doc link to [an example website: fast.ai](https://www.fast.ai/) don't work yet.]]
+
+#+end_example
+[[alert:This is an alert box]]
+
+[[alert:box][Danger ahead]]
+
+[[info:This is info box]]
+
+[[info:box][This is for your information]]
+
+[[warning:box][You have been warned]]
+
+[[important:box][This is important]]
+
+[[tip:box][You are going to get lucky with emacs]]
+
+[[note:box][This is a note]]
+
+*I am currently in process of fixing doclink functionality inside note box*
+[[note:box][A doc link to [an example website: fast.ai](https://www.fast.ai/) don't work yet.]]
+
+** IFrames and Revealjs Presentation
+
+#+begin_example
+[[iframe:https://revealjs.com][Reveal JS Presentation]]
+#+end_example
+
+You can embed websites as iframes. This is particularily useful for embedding revealjs presentation like this.
+[[iframe:https://revealjs.com][Reveal JS Presentation]]
+
+Infact it is also possible to create revealjs presentation directly from org mode. I will be working on integrating the same in next few days. 
+
+
+You can also embed powerpoint presentation easily.
+
+#+begin_export html
+<iframe src="https://onedrive.live.com/embed?cid=8444B359B1EC9E88&amp;resid=8444B359B1EC9E88%2115872&amp;authkey=AOs57-J59jpd4d8&amp;em=2&amp;wdAr=1.7777777777777777" width="610px" height="367px" frameborder="0">Ceci est un document <a target="_blank" href="https://office.com">Microsoft Office</a> incorporé, avec <a target="_blank" href="https://office.com/webapps">Office</a>.</iframe>
+#+end_export
