@@ -220,7 +220,7 @@ We need to create a /_org/ folder . Inside /_org/ folder , it should mirror stru
      [[tip:box][If you quickly want to try above setup yourself. Please follow following instruction]]
        
      -If you are starting from scratch. Use my fork of fastpages as templat.Instructions are documented [[https://fastpages.fast.ai/fastpages/jupyter/2020/02/21/introducing-fastpages.html][here]]. Please click on [[https://github.com/Rahuketu86/fastpages/generate][my fastpages fork here]] to start generating your repository from template. After a few seconds you will get an automated pull request. Please setup SSH_DEPLOY_KEY (secret) and fastpages-key as instructed and merge pull request. Your blog will be deployed and working in few seconds automatically. 
-    [[warning:box][Emacs crowd, please don't create repository with "-" in names]]
+    [[warning:box][Emacs crowd, please don't create repository with dashes in names]]
 
      Although I will track the changes in fastai master which may be ahead of my fork. So in case if you have a pre-existing blog or if you would like to have the latest fastpages commits; follow these instructions:-
      - Create a Repository by using fastpages template repository as documented [[https://fastpages.fast.ai/fastpages/jupyter/2020/02/21/introducing-fastpages.html][here]]. Please click on [[https://github.com/fastai/fastpages/generate][here]] to start generating your repository from template.
