@@ -17,6 +17,14 @@ services:
     volumes:
       - .:/data/
 
+  orgconverter:
+    working_dir: /data
+    image: rahuketu86/fastpages-emacs
+    volumes:
+      -  .:/data/
+    command: _custom_action_files/custom.sh
+
+
   converter:
     <<: *fastpages
     command: /fastpages/action_entrypoint.sh
